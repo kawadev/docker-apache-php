@@ -1,0 +1,125 @@
+version: '3'
+
+services:
+  apache24:
+    build: ./services/apache24
+    container_name: apache24
+    volumes:
+      - ./conf/apache24/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./conf/apache24/extra/httpd-vhosts.conf:/usr/local/apache2/conf/extra/httpd-vhosts.conf
+      - ./www:/usr/local/apache2/htdocs/
+      - ./src:/workspace
+      - ./logs:/logs
+    ports:
+      - "8080:80"
+      - "8100:8100"
+    environment:
+      - "TZ=Asia/Tokyo"
+  php72_fpm:
+    build: ./services/php72-fpm
+    container_name: php72_fpm
+    volumes:
+      - ./conf/php72/php.ini:/usr/local/etc/php/php.ini
+      - ./src:/workspace
+      - ./ssh:/ssh
+      - ./scripts:/scripts
+      - ./deploy:/deploy
+    working_dir: /workspace
+    ports:
+      - '9000'
+    env_file:
+      - .env
+    environment:
+      - PHP_VER=7.2
+      - "TZ=Asia/Tokyo"
+    entrypoint: /scripts/entrypoint.sh
+  php73_fpm:
+    build: ./services/php73-fpm
+    container_name: php73_fpm
+    volumes:
+      - ./conf/php73/php.ini:/usr/local/etc/php/php.ini
+      - ./src:/workspace
+      - ./ssh:/ssh
+      - ./scripts:/scripts
+      - ./deploy:/deploy
+    working_dir: /workspace
+    ports:
+      - '9000'
+      #- "3000:3000"
+      #- "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - PHP_VER=7.3
+      - "TZ=Asia/Tokyo"
+    entrypoint: /scripts/entrypoint.sh
+  php74_fpm:
+      build: ./services/php74-fpm
+      container_name: php74_fpm
+      volumes:
+        - ./conf/php74/php.ini:/usr/local/etc/php/php.ini
+        - ./src:/workspace
+        - ./ssh:/ssh
+        - ./scripts:/scripts
+        - ./deploy:/deploy
+      working_dir: /workspace
+      ports:
+        - '9000'
+      env_file:
+        - .env
+      environment:
+        - PHP_VER=7.4
+        - "TZ=Asia/Tokyo"
+      entrypoint: /scripts/entrypoint.sh
+  node:
+    container_name: node
+    image: node:12.8-alpine
+    # build:
+    #   context: ./
+    #   dockerfile: ${NODE_DOCKERFILE}
+    tty: true
+    working_dir: /workspace
+    volumes:
+      - ./src:/workspace
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+  mysql:
+    image: mysql:5.5
+    container_name: mysql55
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - 3306:3306
+    volumes:
+      - mysqldata:/var/lib/mysql
+      - ./conf/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./logs:/var/log/mysql
+  mysql57:
+    image: mysql:5.7
+    container_name: mysql57
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql57data:/var/lib/mysql
+      - ./conf/mysql57/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./logs:/var/log/mysql
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    volumes:
+      - ./conf/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php
+    links:
+      - mysql
+      - mysql57
+    ports:
+      - "4040:80"
+volumes:
+  mysqldata:
+  mysql57data:
